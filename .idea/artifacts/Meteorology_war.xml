@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="Meteorology:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <root id="archive" name="OpenLayerTest.war">
+      <element id="artifact" artifact-name="Meteorology:war exploded" />
+    </root>
+  </artifact>
+</component>

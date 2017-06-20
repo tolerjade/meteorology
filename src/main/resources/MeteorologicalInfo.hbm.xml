@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="cn.ac.iscas.entity.MeteorologicalInfo" table="METEOROLOGICAL_INFORMATION">
+        <!--
+        <id column="record_date" name="date" type="date">
+            <generator class="assigned" />
+        </id>
+        -->
+        <composite-id>
+            <key-property name="date" column="record_date" type="date">
+            </key-property>
+            <key-many-to-one name="meteorologicalStation" class="cn.ac.iscas.entity.MeteorologicalStation"
+                             column="station_id"/>
+        </composite-id>
+        <!--<many-to-one name="meteorologicalStation" class="cn.ac.iscas.entity.MeteorologicalStation" column="station_id"/>-->
+
+        <property column="pre_8" name="pre_8" type="string"></property>
+        <property column="pre_20" name="pre_20" type="string"></property>
+        <property column="pre_total" name="pre_total" type="string"></property>
+        <property column="evp_large" name="evp_large" type="string"></property>
+        <property column="evp_small" name="evp_small" type="string"></property>
+        <property column="win_max_speed" name="win_max_speed" type="string"></property>
+        <property column="win_max_direction" name="win_max_direction" type="string"></property>
+        <property column="win_extrem_speed" name="win_extrem_speed" type="string"></property>
+        <property column="win_extrem_direction" name="win_extrem_direction" type="string"></property>
+        <property column="win_average_speed" name="win_average_speed" type="string"></property>
+        <property column="prs_average" name="prs_average" type="string"></property>
+        <property column="prs_min" name="prs_min" type="string"></property>
+        <property column="prs_max" name="prs_max" type="string"></property>
+        <property column="tem_average" name="tem_average" type="string"></property>
+        <property column="tem_max" name="tem_max" type="string"></property>
+        <property column="tem_min" name="tem_min" type="string"></property>
+        <property column="ssd" name="ssd" type="string"></property>
+        <property column="rhu_min" name="rhu_min" type="string"></property>
+        <property column="rhu_average" name="rhu_average" type="string"></property>
+        <property column="gst_average" name="gst_average" type="string"></property>
+        <property column="gst_max" name="gst_max" type="string"></property>
+        <property column="gst_min" name="gst_min" type="string"></property>
+        <property column="noaa_spfh" name="noaa_spfh" type="string"></property>
+    </class>
+</hibernate-mapping>

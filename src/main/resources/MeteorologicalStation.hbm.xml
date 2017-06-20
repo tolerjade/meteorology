@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="cn.ac.iscas.entity.MeteorologicalStation" table="METEOROLOGICAL_STATIONS">
+        <id column="id" name="id" type="int">
+            <generator class="assigned"/>
+        </id>
+        <set name="meteorologicalInfos" table="METEOROLOGICAL_INFORMATION" inverse="true">
+            <key column="station_id"/>
+            <one-to-many class="cn.ac.iscas.entity.MeteorologicalInfo"/>
+        </set>
+        <property column="name" name="name" type="string"></property>
+        <property column="lon" name="lon" type="float"></property>
+        <property column="lat" name="lat" type="float"></property>
+        <property column="alt" name="alt" type="float"></property>
+    </class>
+</hibernate-mapping>
