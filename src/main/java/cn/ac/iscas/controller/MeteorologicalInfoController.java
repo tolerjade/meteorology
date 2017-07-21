@@ -30,7 +30,7 @@ public class MeteorologicalInfoController {
     public static void main(String[] args) {
         MeteorologicalInfoController meteorologicalInfoController = new MeteorologicalInfoController();
         //处理站点数据
-        meteorologicalInfoController.interpolateTem(meteorologicalInfoController);
+        meteorologicalInfoController.interpolateRhu(meteorologicalInfoController);
         //处理温度格点数据
         //meteorologicalInfoController.handle_grid_tem(meteorologicalInfoController);
         //处理降水格点数据
@@ -585,7 +585,7 @@ public class MeteorologicalInfoController {
     }
 
     //插值处理温度
-     public void interpolateTem(MeteorologicalInfoController meteorologicalInfoController) {
+    public void interpolateTem(MeteorologicalInfoController meteorologicalInfoController) {
         String directoryPath = "D:\\Project\\interpolate\\Anuspl43\\bin\\TEM_MAX_";
         String workspace = "D:\\Project\\interpolate\\Anuspl43\\bin";
         String pythonWorkspace = "C:\\Users\\admin\\Desktop";
@@ -681,7 +681,7 @@ public class MeteorologicalInfoController {
     }
 
     //生成温度的splinb内容
-     public String generateTemSplinb(String filename) {
+    public String generateTemSplinb(String filename) {
         StringBuffer sb = new StringBuffer();
         sb.append("Daily Max Temperature").append("\n"); //title of fitted surface
         sb.append(5).append("\n"); //surface value units code
@@ -718,6 +718,168 @@ public class MeteorologicalInfoController {
 
     //生成温度的lapgrd内容
     public String generateTemlapgrd(String fileName) {
+        StringBuffer sb = new StringBuffer();
+        sb.append(fileName).append(".sur").append("\n"); // surface file name
+        sb.append(1).append("\n"); // surface number
+       // sb.append(1).append("\n"); // transform surface values
+        sb.append(1).append("\n"); // type of surface calculation
+       // sb.append(fileName).append(".cov").append("\n"); // error covariance file
+        sb.append("\n");
+        //sb.append(2).append("\n"); // type of error calculation
+        //sb.append("\n"); // maximum standard error
+        sb.append(1).append("\n"); // position option
+        sb.append(1).append("\n"); // index of first grid variable
+        sb.append("62.1483 138.8283 0.01").append("\n");// lower & upper limits, transf code, ref unit, margins
+        sb.append(2).append("\n"); // index of second grid variable
+        sb.append("13.1320 66.3120 0.01").append("\n");// lower & upper limits, transf code, ref unit, margins
+        sb.append(0).append("\n"); // mode of mask grid
+        sb.append(2).append("\n"); // mode of 3rd independent variable
+        sb.append("china_dem01.txt").append("\n"); // input grid file name
+        sb.append(2).append("\n");// mode of output grids
+        sb.append("-99.0").append("\n"); // special value for output grids
+        sb.append("GRD_").append(fileName).append(".grd").append("\n"); // name of output grid file for surface 1
+        sb.append("\n"); //  output grid format
+        //sb.append(2).append("\n");// mode of output error grids
+        //sb.append("-99.0").append("\n"); // special value for output error grids
+        //sb.append("COV_").append(fileName).append(".grd").append("\n"); // name of output grid file for surface 1
+        //sb.append("\n"); //  output grid format
+        return sb.toString();
+    }
+
+    //插值处理湿度
+    public void interpolateRhu(MeteorologicalInfoController meteorologicalInfoController) {
+        String directoryPath = "D:\\Project\\interpolate\\Anuspl43\\bin\\RHU_AVG_";
+        String workspace = "D:\\Project\\interpolate\\Anuspl43\\bin";
+        String pythonWorkspace = "C:\\Users\\admin\\Desktop";
+        List<MeteorologicalStation> meteorologicalStations = meteorologicalInfoController.meteorologicalStationDao.getAllByAlt();
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+        String file = null;
+        try {
+            java.util.Date udate = format.parse("20160631");
+            Date date = null;
+            Calendar calendar = new GregorianCalendar();
+            DecimalFormat format1 = new DecimalFormat("0.000000");
+            DecimalFormat format2 = new DecimalFormat("0.00");
+            for (int i = 0; i < 1; i++) {
+                System.out.println(new java.util.Date().toString());
+                StringBuffer sb = new StringBuffer();
+                date = new Date(udate.getTime());
+                for (MeteorologicalStation meteorologicalStation : meteorologicalStations) {
+                    MeteorologicalInfo meteorologicalInfo = new MeteorologicalInfo();
+                    meteorologicalInfo.setMeteorologicalStation(meteorologicalStation);
+                    meteorologicalInfo.setDate(date);
+                    meteorologicalInfoController.meteorologicalInfoDao.getByDateaAndId(meteorologicalInfo);
+                    if (meteorologicalInfo.getRhu_average() == null)
+                        continue;
+                    if (meteorologicalInfo.getRhu_average().equals("32766"))
+                        continue;
+                    String code = FileUtil.formatString(6, String.valueOf(meteorologicalStation.getId()));
+                    String lon = FileUtil.formatString(14, format1.format(meteorologicalStation.getLon()));
+                    String lat = FileUtil.formatString(14, format1.format(meteorologicalStation.getLat()));
+                    String alt = FileUtil.formatString(10, format2.format(meteorologicalStation.getAlt()));
+                    String tem = FileUtil.formatString(10, format2.format(Float.parseFloat(meteorologicalInfo.getTem_max()) / 10));
+                    sb.append(code + lon + lat + alt + tem).append("\n");
+                    //System.out.println(meteorologicalInfo);
+                }
+                file = directoryPath + date.toString() + ".dat";
+                String filename = "RHU_AVG_" + date.toString();
+                String selnotFile = directoryPath + "Selnot_" + date.toString() + ".cmd";
+                String selnotLog = directoryPath + "Selnot_" + date.toString() + ".log";
+                String splinbFile = directoryPath + "Splinb_" + date.toString() + ".cmd";
+                String splinbLog = directoryPath + "Splinb_" + date.toString() + ".log";
+                String lapgrdFile = directoryPath + "Lapgrd_" + date.toString() + ".cmd";
+                String lapgrdLog = directoryPath + "Lapgrd_" + date.toString() + ".log";
+                FileUtil.writeToFile(selnotFile, generateRhuSelnot(filename));
+                FileUtil.writeToFile(splinbFile, generateRhuSplinb(filename));
+                FileUtil.writeToFile(lapgrdFile, generateRhulapgrd(filename));
+                FileUtil.writeToFile(file, sb.toString());
+                String selnotCommand = "selnot<" + selnotFile + ">" + selnotLog;
+                DosUtil.executeDosCommand(workspace, selnotCommand);
+                String splinbCommand = "splinb<" + splinbFile + ">" + splinbLog;
+                DosUtil.executeDosCommand(workspace, splinbCommand);
+                String lapgrdCommand = "lapgrd<" + lapgrdFile + ">" + lapgrdLog;
+                DosUtil.executeDosCommand(workspace, lapgrdCommand);
+
+                DosUtil.executeDosCommand(workspace, "mkdir out\\rhu_avg\\" + date.toString());
+                DosUtil.executeDosCommand(workspace, "move RHU* out\\rhu_avg\\" + date.toString());
+                DosUtil.executeDosCommand(workspace, "move GRD* GRD\\RHU\\AVG");
+                //DosUtil.executeDosCommand(workspace, "move COV* GRD\\TEM\\MAX");
+                DosUtil.executeDosCommand(pythonWorkspace, "python interpolatePre.py");
+                System.out.println(selnotCommand);
+                System.out.println(splinbCommand);
+                System.out.println(lapgrdCommand);
+                calendar.setTime(udate);
+                calendar.add(Calendar.DATE, -1);
+                udate = calendar.getTime();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    //生成湿度的selnot内容
+    public String generateRhuSelnot(String filename) {
+        StringBuffer sb = new StringBuffer();
+        sb.append(2).append("\n");// Number of independent spline variables
+        sb.append(1).append("\n");// Number of independent covariates
+        sb.append(0).append("\n");// Number of surface spline variables
+        sb.append(0).append("\n");// Number of surface covariates
+        sb.append("62.1483 138.8283 0 5 3.0").append("\n");// lower & upper limits, transf code, ref unit, margins
+        sb.append("13.1320 66.3120 0 5 2.0").append("\n");// lower & upper limits, transf code, ref unit, margins
+        sb.append("0 7000.0 1 1").append("\n");// lower & upper limits, transf code, ref unit, margins
+        sb.append("1000.0").append("\n");// transformation coefficient
+        sb.append(2).append("\n"); // dependent variable transformation
+        sb.append(1).append("\n"); // number of surfaces
+        sb.append(0).append("\n"); // number of error variance
+        sb.append(filename).append(".dat").append("\n"); // data file name
+        sb.append(200).append("\n"); // maximum number of data points
+        sb.append(6).append("\n"); // No. of characters in site label
+        sb.append("(a6,2f14.6,f10.2,1f10.2)").append("\n"); // data format
+        sb.append(filename).append(".not").append("\n"); // output knot file
+        sb.append(filename).append(".rej").append("\n"); // output rejected points file
+        sb.append(80).append("\n"); //number of knots
+        return sb.toString();
+    }
+
+    //生成湿度的splinb内容
+    public String generateRhuSplinb(String filename) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("Daily Average Relative Humidity").append("\n"); //title of fitted surface
+        sb.append(0).append("\n"); //surface value units code
+        sb.append(2).append("\n");// Number of independent spline variables
+        sb.append(1).append("\n");// Number of independent covariates
+        sb.append(0).append("\n");// Number of surface spline variables
+        sb.append(0).append("\n");// Number of surface covariates
+        sb.append("62.1483 138.8283 0 5 3.0").append("\n");// lower & upper limits, transf code, ref unit, margins
+        sb.append("13.1320 66.3120 0 5 2.0").append("\n");// lower & upper limits, transf code, ref unit, margins
+        sb.append("0 7000.0 1 1").append("\n");// lower & upper limits, transf code, ref unit, margins
+        sb.append("1000.0").append("\n");// transformation coefficient
+        sb.append(0).append("\n"); // dependent variable transformation
+        sb.append(2).append("\n"); // order of spline
+        sb.append(1).append("\n"); // number of surfaces
+        sb.append(0).append("\n"); // number of relative variances
+        sb.append(1).append("\n"); // optimization directive
+        sb.append(1).append("\n"); // smoothing directive
+        sb.append(filename).append(".dat").append("\n"); //data file name
+        sb.append(200).append("\n"); // maximum number of data points
+        sb.append(6).append("\n"); // No. of characters in site label
+        sb.append("(a6,2f14.6,f10.2,1f10.2)").append("\n"); // data format
+        sb.append(filename).append(".not").append("\n"); // output knot file
+        sb.append(100).append("\n"); // maximum number of data knots
+        sb.append("\n"); // input bad data file name
+        sb.append(filename).append(".flg").append("\n"); // output bad data file name
+        sb.append(filename).append(".res").append("\n"); // output large residual file name
+        sb.append(filename).append(".opt").append("\n"); // output optimization parameters file name
+        sb.append(filename).append(".sur").append("\n"); // output surface coefficients file name
+        sb.append(filename).append(".lis").append("\n"); // output data list file name
+        sb.append(filename).append(".cov").append("\n"); // output error covariance file name
+        sb.append("\n"); // validation data file name
+        return sb.toString();
+    }
+
+    //生成湿度的lapgrd内容
+    public String generateRhulapgrd(String fileName) {
         StringBuffer sb = new StringBuffer();
         sb.append(fileName).append(".sur").append("\n"); // surface file name
         sb.append(1).append("\n"); // surface number
